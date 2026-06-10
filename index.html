@@ -43,7 +43,18 @@
             </div>
             <div class="form-group">
               <label for="room-num">Room Number / เลขห้อง</label>
-              <input type="text" id="room-num" placeholder="e.g., 4/4" required oninput="syncPreview()">
+              <select id="room-num" required onchange="loadCloudUnitData(this.value); syncPreview();">
+                <option value="" disabled selected>Select Room</option>
+                <option value="101">101</option><option value="102">102</option><option value="103">103</option><option value="104">104</option><option value="105">105</option>
+                <option value="201">201</option><option value="202">202</option><option value="203">203</option><option value="204">204</option><option value="205">205</option>
+                <option value="301">301</option><option value="302">302</option><option value="303">303</option><option value="304">304</option>
+                <option value="401">401</option><option value="402">402</option><option value="403">403</option><option value="404/1">404/1</option><option value="404/2">404/2</option><option value="405">405</option><option value="406">406</option><option value="407">407</option><option value="408">408</option>
+                <option value="501">501</option><option value="502">502</option><option value="503">503</option><option value="504">504</option><option value="505">505</option><option value="506">506</option><option value="507">507</option><option value="508">508</option>
+                <option value="ต1">ต1</option><option value="ต2">ต2</option><option value="ต3">ต3</option><option value="ต4">ต4</option><option value="ต5">ต5</option>
+                <option value="T1">T1</option><option value="T2">T2</option><option value="T3">T3</option>
+                <option value="ร1">ร1</option><option value="ร2">ร2</option><option value="ร3">ร3</option><option value="ร4">ร4</option><option value="ร5">ร5</option><option value="ร6">ร6</option><option value="ร7">ร7</option><option value="ร8">ร8</option>
+                <option value="Shop-1">Shop-1</option>
+              </select>
             </div>
             <div class="form-group">
               <label for="tenant-name">Tenant Name / ชื่อผู้เช่า</label>
@@ -151,7 +162,18 @@
             </div>
             <div class="form-group">
               <label for="mo-room-num">Room Number / เลขห้อง</label>
-              <input type="text" id="mo-room-num" placeholder="e.g., 4/4" oninput="syncPreview()">
+              <select id="mo-room-num" onchange="syncPreview()">
+                <option value="" disabled selected>Select Room</option>
+                <option value="101">101</option><option value="102">102</option><option value="103">103</option><option value="104">104</option><option value="105">105</option>
+                <option value="201">201</option><option value="202">202</option><option value="203">203</option><option value="204">204</option><option value="205">205</option>
+                <option value="301">301</option><option value="302">302</option><option value="303">303</option><option value="304">304</option>
+                <option value="401">401</option><option value="402">402</option><option value="403">403</option><option value="404/1">404/1</option><option value="404/2">404/2</option><option value="405">405</option><option value="406">406</option><option value="407">407</option><option value="408">408</option>
+                <option value="501">501</option><option value="502">502</option><option value="503">503</option><option value="504">504</option><option value="505">505</option><option value="506">506</option><option value="507">507</option><option value="508">508</option>
+                <option value="ต1">ต1</option><option value="ต2">ต2</option><option value="ต3">ต3</option><option value="ต4">ต4</option><option value="ต5">ต5</option>
+                <option value="T1">T1</option><option value="T2">T2</option><option value="T3">T3</option>
+                <option value="ร1">ร1</option><option value="ร2">ร2</option><option value="ร3">ร3</option><option value="ร4">ร4</option><option value="ร5">ร5</option><option value="ร6">ร6</option><option value="ร7">ร7</option><option value="ร8">ร8</option>
+                <option value="Shop-1">Shop-1</option>
+              </select>
             </div>
             <div class="form-group">
               <label for="mo-tenant-name">Tenant Name / ชื่อผู้เช่า</label>

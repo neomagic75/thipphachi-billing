@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('preview-date').textContent = `Date: ${formattedDate}`;
 
   // Add Room Change event listeners to trigger historical data load
-  document.getElementById('room-num').addEventListener('change', (e) => loadHistoricalRoomData(e.target.value));
+  // document.getElementById('room-num').addEventListener('change', (e) => loadCloudUnitData(e.target.value));
   
   // Auto-generate invoice number
   document.getElementById('invoice-num').value = generateInvoiceNumber();
@@ -406,42 +406,56 @@ function formatBaht(value) {
   });
 }
 
-// ================= LOCAL STORAGE PERSISTENCE (QoL Feature) =================
-function saveCurrentReadings() {
-  const room = document.getElementById('room-num').value.trim();
+// ================= CLOUD UNIT PERSISTENCE =================
+async function syncCloudUnitData() {
+  const room = document.getElementById('room-num').value;
   if (!room) return;
 
   const data = {
-    elec: parseFloat(document.getElementById('elec-curr').value) || 0,
-    water: parseFloat(document.getElementById('water-curr').value) || 0,
-    tenant: document.getElementById('tenant-name').value.trim(),
-    timestamp: Date.now()
+    room_number: room,
+    tenant_name: document.getElementById('tenant-name').value.trim(),
+    elec_last_reading: parseFloat(document.getElementById('elec-curr').value) || 0,
+    water_last_reading: parseFloat(document.getElementById('water-curr').value) || 0,
+    base_rent: parseFloat(document.getElementById('base-rent').value) || 0
   };
 
-  localStorage.setItem(`thipphachi_room_${room}`, JSON.stringify(data));
+  try {
+    const res = await fetch('/api/units', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) console.error('Failed to sync unit data');
+  } catch (err) {
+    console.error('Failed to sync unit data:', err);
+  }
 }
 
-function loadHistoricalRoomData(room) {
+async function loadCloudUnitData(room) {
   if (!room) return;
-  const savedData = localStorage.getItem(`thipphachi_room_${room}`);
   
-  if (savedData) {
-    const data = JSON.parse(savedData);
+  try {
+    const res = await fetch(`/api/units?room=${encodeURIComponent(room)}`);
+    if (!res.ok) return;
     
-    // Auto populate the PREVIOUS fields with the historical CURRENT readings
-    document.getElementById('elec-prev').value = data.elec || 0;
-    document.getElementById('water-prev').value = data.water || 0;
-    document.getElementById('tenant-name').value = data.tenant || '';
-    
-    // Reset current fields to zero for new entry
-    document.getElementById('elec-curr').value = 0;
-    document.getElementById('water-curr').value = 0;
-    
-    // Re-sync
-    syncPreview();
-    
-    // Quick notification banner in console/log for debugging
-    console.log(`Loaded historical reading for Room ${room}: Elec ${data.elec}, Water ${data.water}`);
+    const json = await res.json();
+    if (json.unit) {
+      document.getElementById('elec-prev').value = json.unit.elec_last_reading || 0;
+      document.getElementById('water-prev').value = json.unit.water_last_reading || 0;
+      document.getElementById('tenant-name').value = json.unit.tenant_name || '';
+      
+      if (json.unit.base_rent) {
+        document.getElementById('base-rent').value = json.unit.base_rent;
+      }
+      
+      document.getElementById('elec-curr').value = 0;
+      document.getElementById('water-curr').value = 0;
+      
+      syncPreview();
+      console.log(`Loaded cloud reading for Room ${room}`);
+    }
+  } catch (err) {
+    console.error('Failed to load unit data:', err);
   }
 }
 
@@ -449,7 +463,7 @@ function loadHistoricalRoomData(room) {
 function printReceipt() {
   // If in utility mode, save current readings as NEXT month's previous readings
   if (appMode === 'utility') {
-    saveCurrentReadings();
+    syncCloudUnitData();
   }
   
   incrementInvoiceCounter();
@@ -519,7 +533,7 @@ async function saveInvoiceToCloud() {
     if (res.ok) {
       alert('Invoice successfully saved to the cloud!');
       incrementInvoiceCounter();
-      if (appMode === 'utility') saveCurrentReadings();
+      if (appMode === 'utility') syncCloudUnitData();
     } else {
       const err = await res.json();
       alert('Error saving to cloud: ' + (err.error || 'Unknown error'));
