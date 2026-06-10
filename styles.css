@@ -1,5 +1,6 @@
 /* ================= CUSTOM PROPERTIES & DESIGN TOKENS ================= */
 :root {
+  color-scheme: light;
   --bg-app: #f4f7f6;
   --bg-sidebar: #ffffff;
   --bg-card: #ffffff;
@@ -16,6 +17,11 @@
   --font-family: 'Outfit', 'Sarabun', sans-serif;
   --shadow-premium: 0 4px 15px rgba(0, 0, 0, 0.05);
   --shadow-glow: 0 4px 15px rgba(6, 199, 85, 0.3);
+}
+
+option {
+  background-color: #ffffff;
+  color: #1f2937;
 }
 
 /* ================= RESET & BASE STYLES ================= */
