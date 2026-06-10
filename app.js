@@ -24,6 +24,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('invoice-num').value = generateInvoiceNumber();
   document.getElementById('mo-invoice-num').value = generateInvoiceNumber();
 
+  // Handle Enter key for PIN input
+  document.getElementById('pin-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      submitPin();
+    }
+  });
+
   // Sync initial view
   syncPreview();
 });
