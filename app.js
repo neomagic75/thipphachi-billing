@@ -250,10 +250,16 @@ function syncUtilityPreview() {
   const elecUnits = Math.max(0, elecCurr - elecPrev);
   const elecCost = elecUnits * elecRate;
   
-  const waterUnits = Math.max(0, waterCurr - waterPrev);
-  const waterCost = waterUnits * waterRate;
-  
+  const waterUsage = Math.max(0, waterCurr - waterPrev);
+  const waterCost = waterUsage * waterRate;
+
   const grandTotal = baseRent + wifiFee + otherFee + elecCost + waterCost;
+
+  // Render inline card summaries
+  document.getElementById('elec-usage-inline').textContent = elecUnits;
+  document.getElementById('elec-cost-inline').textContent = elecCost.toLocaleString('en-US', {minimumFractionDigits: 2});
+  document.getElementById('water-usage-inline').textContent = waterUsage;
+  document.getElementById('water-cost-inline').textContent = waterCost.toLocaleString('en-US', {minimumFractionDigits: 2});
 
   // Render text values
   document.getElementById('prev-invoice-val').textContent = invoiceNum;
