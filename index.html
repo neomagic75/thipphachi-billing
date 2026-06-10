@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ห้องเช่าทิพพจี - Billing System</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header no-print">
+      <div class="logo-area">
+        <img src="logo.svg" alt="Thipphachi Logo" class="header-logo">
+        <div>
+          <h1>ห้องเช่าทิพพจี</h1>
+          <p>Thipphachi Rental Complex Billing System</p>
+        </div>
+      </div>
+      <!-- Mode Switcher -->
+      <div class="mode-tabs">
+        <button class="tab-btn active" id="tab-utility" onclick="switchMode('utility')">Monthly Utility</button>
+        <button class="tab-btn" id="tab-moveout" onclick="switchMode('moveout')">Move-Out Billing</button>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- ================= LEFT PANEL: INPUT FORM ================= -->
+      <section class="form-panel no-print">
+        
+        <!-- UTILITY FORM -->
+        <div id="form-utility" class="active-form">
+          <h2 class="section-title">Monthly Utility Entry</h2>
+          
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="room-num">Room Number / เลขห้อง</label>
+              <input type="text" id="room-num" placeholder="e.g., 4/4" required oninput="syncPreview()">
+            </div>
+            <div class="form-group">
+              <label for="tenant-name">Tenant Name / ชื่อผู้เช่า</label>
+              <input type="text" id="tenant-name" placeholder="Tenant Name" oninput="syncPreview()">
+            </div>
+          </div>
+
+          <!-- Base Rent & Fees -->
+          <div class="form-section-card">
+            <h3>Rental & Services</h3>
+            <div class="grid-3">
+              <div class="form-group">
+                <label for="base-rent">Base Rent (THB)</label>
+                <input type="number" id="base-rent" value="4000" oninput="syncPreview()">
+              </div>
+              <div class="form-group">
+                <label for="wifi-fee">Wi-Fi Fee (THB)</label>
+                <input type="number" id="wifi-fee" value="150" oninput="syncPreview()">
+              </div>
+              <div class="form-group">
+                <label for="other-fee">Other / Late Fee (THB)</label>
+                <input type="number" id="other-fee" value="0" oninput="syncPreview()">
+              </div>
+            </div>
+          </div>
+
+          <!-- Electricity Section -->
+          <div class="form-section-card">
+            <div class="card-header">
+              <h3>Electricity (⚡ ไฟฟ้า)</h3>
+              <span class="rate-badge">Rate: <input type="number" id="elec-rate" value="7" class="inline-rate" oninput="syncPreview()"> THB/Unit</span>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label for="elec-prev">Previous Reading / ครั้งก่อน</label>
+                <input type="number" id="elec-prev" value="0" oninput="syncPreview()">
+              </div>
+              <div class="form-group">
+                <label for="elec-curr">Current Reading / ครั้งนี้</label>
+                <input type="number" id="elec-curr" value="0" oninput="syncPreview()">
+              </div>
+            </div>
+            <div class="form-group photo-upload">
+              <label class="photo-btn">
+                📸 Take/Upload Electricity Meter Photo
+                <input type="file" id="elec-photo" accept="image/*" capture="environment" onchange="handlePhoto(this, 'elec')">
+              </label>
+              <div id="elec-preview-container" class="thumbnail-preview hidden">
+                <img id="elec-thumb" src="" alt="Meter preview">
+                <button type="button" class="remove-photo" onclick="removePhoto('elec')">×</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Water Section -->
+          <div class="form-section-card">
+            <div class="card-header">
+              <h3>Water (💧 ประปา)</h3>
+              <span class="rate-badge">Rate: <input type="number" id="water-rate" value="18" class="inline-rate" oninput="syncPreview()"> THB/Unit</span>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label for="water-prev">Previous Reading / ครั้งก่อน</label>
+                <input type="number" id="water-prev" value="0" oninput="syncPreview()">
+              </div>
+              <div class="form-group">
+                <label for="water-curr">Current Reading / ครั้งนี้</label>
+                <input type="number" id="water-curr" value="0" oninput="syncPreview()">
+              </div>
+            </div>
+            <div class="form-group photo-upload">
+              <label class="photo-btn">
+                📸 Take/Upload Water Meter Photo
+                <input type="file" id="water-photo" accept="image/*" capture="environment" onchange="handlePhoto(this, 'water')">
+              </label>
+              <div id="water-preview-container" class="thumbnail-preview hidden">
+                <img id="water-thumb" src="" alt="Meter preview">
+                <button type="button" class="remove-photo" onclick="removePhoto('water')">×</button>
+              </div>
+            </div>
+          </div>
+
+          <button class="action-btn primary-btn" onclick="printReceipt()">Print/Save Receipt</button>
+        </div>
+
+        <!-- MOVE-OUT FORM -->
+        <div id="form-moveout" class="hidden">
+          <h2 class="section-title">Move-Out / Damage Report</h2>
+          
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="mo-room-num">Room Number / เลขห้อง</label>
+              <input type="text" id="mo-room-num" placeholder="e.g., 4/4" oninput="syncPreview()">
+            </div>
+            <div class="form-group">
+              <label for="mo-tenant-name">Tenant Name / ชื่อผู้เช่า</label>
+              <input type="text" id="mo-tenant-name" placeholder="Tenant Name" oninput="syncPreview()">
+            </div>
+          </div>
+
+          <div class="form-section-card">
+            <h3>Security Deposit & Bills</h3>
+            <div class="grid-3">
+              <div class="form-group">
+                <label for="mo-deposit">Security Deposit (THB)</label>
+                <input type="number" id="mo-deposit" value="8000" oninput="syncPreview()">
+              </div>
+              <div class="form-group">
+                <label for="mo-unpaid-rent">Unpaid Rent Rollover</label>
+                <input type="number" id="mo-unpaid-rent" value="0" oninput="syncPreview()">
+              </div>
+              <div class="form-group">
+                <label for="mo-unpaid-utils">Unpaid Utilities</label>
+                <input type="number" id="mo-unpaid-utils" value="0" oninput="syncPreview()">
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Damage Items -->
+          <div class="form-section-card">
+            <div class="card-header">
+              <h3>Damages & Repairs / รายการความเสียหาย</h3>
+              <button class="sub-btn" onclick="addDamageItem()">＋ Add Item</button>
+            </div>
+            <div id="damage-list-container">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <button class="action-btn primary-btn" onclick="printReceipt()">Print/Save Move-Out Bill</button>
+        </div>
+      </section>
+
+      <!-- ================= RIGHT PANEL: LIVE RECEIPT PREVIEW ================= -->
+      <section class="receipt-panel">
+        <div class="receipt-container-outer">
+          <div class="receipt-header-meta no-print">
+            <h3>Live Receipt Preview (Half-A4 Layout)</h3>
+            <p>Will be formatted exactly as below on print.</p>
+          </div>
+          
+          <!-- The printable area -->
+          <div class="receipt-paper" id="printable-receipt">
+            <!-- Header -->
+            <div class="receipt-logo-block">
+              <img src="logo.svg" alt="Logo" class="receipt-logo">
+              <div class="receipt-company-info">
+                <h2 class="company-name">ห้องเช่าทิพพจี</h2>
+                <p class="company-sub">Thipphachi Rental Complex</p>
+                <p class="receipt-address">ซอยร่วมใจพัฒนา ถนนนนทบุรี 2051 ปากเกร็ด นนทบุรี</p>
+              </div>
+            </div>
+
+            <hr class="receipt-divider">
+
+            <!-- Title & Metadata -->
+            <div class="receipt-title-row">
+              <span class="receipt-title-text" id="preview-title">ใบแจ้งหนี้ค่าเช่าและสาธารณูปโภค</span>
+              <span class="receipt-date-text" id="preview-date">Date: 2026-06-10</span>
+            </div>
+
+            <div class="receipt-meta-grid">
+              <div><strong>Room / ห้อง:</strong> <span id="prev-room-val">-</span></div>
+              <div><strong>Tenant / ผู้เช่า:</strong> <span id="prev-tenant-val">-</span></div>
+            </div>
+
+            <!-- Main Items Table -->
+            <div id="preview-utility-table">
+              <table class="receipt-table">
+                <thead>
+                  <tr>
+                    <th>Description / รายการ</th>
+                    <th class="text-right">Unit / หน่วย</th>
+                    <th class="text-right">Rate / หน่วยละ</th>
+                    <th class="text-right">Amount / จำนวนเงิน</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>ค่าเช่าห้องพัก (Base Rent)</td>
+                    <td class="text-right">-</td>
+                    <td class="text-right">-</td>
+                    <td class="text-right" id="prev-rent-cost">฿0.00</td>
+                  </tr>
+                  <tr>
+                    <td>ค่าบริการอินเทอร์เน็ต (Wi-Fi)</td>
+                    <td class="text-right">-</td>
+                    <td class="text-right">-</td>
+                    <td class="text-right" id="prev-wifi-cost">฿0.00</td>
+                  </tr>
+                  <tr id="prev-other-row" class="hidden">
+                    <td>ค่าใช้จ่ายอื่นๆ / ค่าปรับล่าช้า</td>
+                    <td class="text-right">-</td>
+                    <td class="text-right">-</td>
+                    <td class="text-right" id="prev-other-cost">฿0.00</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      ค่ากระแสไฟฟ้า (Electricity)<br>
+                      <small class="meter-detail">Readings: <span id="prev-elec-readings">0 - 0</span></small>
+                    </td>
+                    <td class="text-right" id="prev-elec-units">0</td>
+                    <td class="text-right" id="prev-elec-rate">฿7.00</td>
+                    <td class="text-right" id="prev-elec-cost">฿0.00</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      ค่าน้ำประปา (Water)<br>
+                      <small class="meter-detail">Readings: <span id="prev-water-readings">0 - 0</span></small>
+                    </td>
+                    <td class="text-right" id="prev-water-units">0</td>
+                    <td class="text-right" id="prev-water-rate">฿18.00</td>
+                    <td class="text-right" id="prev-water-cost">฿0.00</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Move-Out Table (Hidden by default) -->
+            <div id="preview-moveout-table" class="hidden">
+              <table class="receipt-table">
+                <thead>
+                  <tr>
+                    <th>Description / รายการความเสียหาย</th>
+                    <th class="text-right">Photo / รูปภาพ</th>
+                    <th class="text-right">Amount / จำนวนเงิน</th>
+                  </tr>
+                </thead>
+                <tbody id="prev-damage-rows">
+                  <!-- Dynamic -->
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td>เงินประกันห้องพัก (Security Deposit)</td>
+                    <td class="text-right">เครดิต</td>
+                    <td class="text-right text-success" id="prev-mo-deposit">-฿0.00</td>
+                  </tr>
+                  <tr id="prev-mo-rent-row" class="hidden">
+                    <td>ค่าเช่าค้างชำระ (Unpaid Rent)</td>
+                    <td class="text-right">-</td>
+                    <td class="text-right text-danger" id="prev-mo-unpaid-rent">฿0.00</td>
+                  </tr>
+                  <tr id="prev-mo-utils-row" class="hidden">
+                    <td>ค่าน้ำ/ค่าไฟค้างชำระ (Unpaid Utilities)</td>
+                    <td class="text-right">-</td>
+                    <td class="text-right text-danger" id="prev-mo-unpaid-utils">฿0.00</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <!-- Grand Total Section -->
+            <div class="receipt-summary-block">
+              <div class="total-row">
+                <span class="total-label" id="grand-total-label">Grand Total / ยอดชำระสุทธิ:</span>
+                <span class="total-val" id="prev-grand-total">฿0.00</span>
+              </div>
+            </div>
+
+            <!-- Payment instructions / Signatures -->
+            <div class="receipt-footer">
+              <div class="payment-instructions" id="payment-instructions-block">
+                <p><strong>การชำระเงิน:</strong> โอนผ่านบัญชีธนาคารกสิกรไทย</p>
+                <p>เลขบัญชี: <strong>xxx-x-xxxxx-x</strong> ชื่อบัญชี: <strong>คุณพ่อ/คุณแม่</strong></p>
+              </div>
+              <div class="signature-block">
+                <div class="sig-line">
+                  <p>ลงชื่อผู้แจ้งหนี้ (Lessor Sign)</p>
+                  <div class="line"></div>
+                </div>
+                <div class="sig-line">
+                  <p>ลงชื่อผู้รับแจ้ง (Tenant Sign)</p>
+                  <div class="line"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Embedded Meter Photos (Hidden in screen view, printed neatly at the bottom) -->
+            <div class="printed-photos-section">
+              <div id="print-photo-elec" class="print-photo-box hidden">
+                <p class="photo-title">หลักฐานมิเตอร์ไฟฟ้า (Elec Meter Photo)</p>
+                <img id="print-img-elec" src="" alt="Elec Meter">
+              </div>
+              <div id="print-photo-water" class="print-photo-box hidden">
+                <p class="photo-title">หลักฐานมิเตอร์น้ำ (Water Meter Photo)</p>
+                <img id="print-img-water" src="" alt="Water Meter">
+              </div>
+              <div id="print-damage-gallery" class="print-damage-gallery hidden">
+                <!-- Move out damage images rendered here for printing -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

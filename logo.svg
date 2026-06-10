@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100" height="100">
+  <defs>
+    <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+  </defs>
+  <!-- Background Circle for Web View (hidden in print via CSS if needed, but clean) -->
+  <circle cx="100" cy="100" r="90" fill="none" stroke="#0f172a" stroke-width="6" />
+  <!-- Minimalist House & Roof Structure -->
+  <path d="M50,110 L100,60 L150,110 M65,95 L65,145 L135,145 L135,95" fill="none" stroke="#0f172a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Decorative Interior Monogram T for Thipphachi -->
+  <path d="M85,90 L115,90 M100,90 L100,130" fill="none" stroke="#0f172a" stroke-width="8" stroke-linecap="round"/>
+</svg>
