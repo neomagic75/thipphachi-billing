@@ -778,7 +778,8 @@ body {
 .modal {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -788,13 +789,52 @@ body {
   display: none;
 }
 .modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
+  background-color: var(--bg-sidebar);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 2rem;
+  border-radius: 16px;
   width: 90%;
-  max-width: 400px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  max-width: 360px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
   text-align: center;
+}
+.modal-content h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+.modal-content p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+#pin-input {
+  width: 100%;
+  background-color: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  color: var(--text-main);
+  font-family: var(--font-family);
+  font-size: 1.2rem;
+  text-align: center;
+  letter-spacing: 0.5rem;
+  outline: none;
+  margin-bottom: 1.5rem;
+  transition: all 0.25s ease;
+}
+#pin-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  background-color: rgba(15, 23, 42, 0.85);
+}
+.modal-content .grid-2 {
+  margin-bottom: 0;
+}
+.modal-content .sub-btn {
+  padding: 0.8rem;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 .badge {
   padding: 4px 8px;
@@ -802,6 +842,6 @@ body {
   font-size: 0.8rem;
   font-weight: 600;
 }
-.badge-blue { background: #e0f2fe; color: #0369a1; }
-.badge-orange { background: #ffedd5; color: #c2410c; }
+.badge-blue { background: #1e3a8a; color: #93c5fd; }
+.badge-orange { background: #7c2d12; color: #fdba74; }
 
