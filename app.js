@@ -20,9 +20,26 @@ document.addEventListener('DOMContentLoaded', () => {
   // Add Room Change event listeners to trigger historical data load
   document.getElementById('room-num').addEventListener('change', (e) => loadHistoricalRoomData(e.target.value));
   
+  // Auto-generate invoice number
+  document.getElementById('invoice-num').value = generateInvoiceNumber();
+  document.getElementById('mo-invoice-num').value = generateInvoiceNumber();
+
   // Sync initial view
   syncPreview();
 });
+
+// ================= SEQUENCE GENERATOR =================
+function generateInvoiceNumber() {
+  const d = new Date();
+  const ym = d.getFullYear().toString().slice(-2) + (d.getMonth() + 1).toString().padStart(2, '0');
+  let counter = parseInt(localStorage.getItem('thipphachi_invoice_counter') || '1');
+  return `INV-${ym}-${counter.toString().padStart(3, '0')}`;
+}
+
+function incrementInvoiceCounter() {
+  let counter = parseInt(localStorage.getItem('thipphachi_invoice_counter') || '1');
+  localStorage.setItem('thipphachi_invoice_counter', counter + 1);
+}
 
 // ================= TAB SWITCHING =================
 function switchMode(mode) {
@@ -206,6 +223,7 @@ function syncPreview() {
 
 function syncUtilityPreview() {
   // Inputs
+  const invoiceNum = document.getElementById('invoice-num').value || '-';
   const room = document.getElementById('room-num').value || '-';
   const tenant = document.getElementById('tenant-name').value || '-';
   
@@ -231,6 +249,7 @@ function syncUtilityPreview() {
   const grandTotal = baseRent + wifiFee + otherFee + elecCost + waterCost;
 
   // Render text values
+  document.getElementById('prev-invoice-val').textContent = invoiceNum;
   document.getElementById('prev-room-val').textContent = room;
   document.getElementById('prev-tenant-val').textContent = tenant;
   
@@ -269,6 +288,7 @@ function syncUtilityPreview() {
 
 function syncMoveoutPreview() {
   // Inputs
+  const invoiceNum = document.getElementById('mo-invoice-num').value || '-';
   const room = document.getElementById('mo-room-num').value || '-';
   const tenant = document.getElementById('mo-tenant-name').value || '-';
   const deposit = parseFloat(document.getElementById('mo-deposit').value) || 0;
@@ -276,6 +296,7 @@ function syncMoveoutPreview() {
   const unpaidUtils = parseFloat(document.getElementById('mo-unpaid-utils').value) || 0;
   
   // Render Metadata
+  document.getElementById('prev-invoice-val').textContent = invoiceNum;
   document.getElementById('prev-room-val').textContent = room;
   document.getElementById('prev-tenant-val').textContent = tenant;
   
@@ -418,6 +439,8 @@ function printReceipt() {
     saveCurrentReadings();
   }
   
+  incrementInvoiceCounter();
+  
   window.print();
 }
 
@@ -482,6 +505,7 @@ async function saveInvoiceToCloud() {
     
     if (res.ok) {
       alert('Invoice successfully saved to the cloud!');
+      incrementInvoiceCounter();
       if (appMode === 'utility') saveCurrentReadings();
     } else {
       const err = await res.json();
@@ -505,6 +529,7 @@ function constructPayload() {
 
     return {
       invoice_type: 'utility',
+      invoice_number: document.getElementById('invoice-num').value || '-',
       room_num: document.getElementById('room-num').value || '-',
       tenant_name: document.getElementById('tenant-name').value || '-',
       total_amount: baseRent + wifiFee + otherFee + elecCost + waterCost,
@@ -534,6 +559,7 @@ function constructPayload() {
 
     return {
       invoice_type: 'moveout',
+      invoice_number: document.getElementById('mo-invoice-num').value || '-',
       room_num: document.getElementById('mo-room-num').value || '-',
       tenant_name: document.getElementById('mo-tenant-name').value || '-',
       total_amount: netDue,
@@ -591,6 +617,7 @@ function renderHistoryList(invoices) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${date}</td>
+      <td><strong>${inv.invoice_number || '-'}</strong></td>
       <td><strong>${inv.room_num}</strong></td>
       <td>${inv.tenant_name || '-'}</td>
       <td><span class="badge ${inv.invoice_type === 'utility' ? 'badge-blue' : 'badge-orange'}">${inv.invoice_type.toUpperCase()}</span></td>
@@ -605,7 +632,8 @@ function filterHistory() {
   const term = document.getElementById('search-history').value.toLowerCase();
   const filtered = allInvoices.filter(inv => 
     (inv.room_num && inv.room_num.toLowerCase().includes(term)) ||
-    (inv.tenant_name && inv.tenant_name.toLowerCase().includes(term))
+    (inv.tenant_name && inv.tenant_name.toLowerCase().includes(term)) ||
+    (inv.invoice_number && inv.invoice_number.toLowerCase().includes(term))
   );
   renderHistoryList(filtered);
 }

@@ -38,11 +38,11 @@ module.exports = async (req, res) => {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   if (req.method === 'POST') {
-    const { room_num, tenant_name, invoice_type, total_amount, details } = req.body;
+    const { invoice_number, room_num, tenant_name, invoice_type, total_amount, details } = req.body;
     
     const { data, error } = await supabase
       .from('thipphachi_invoices')
-      .insert([{ room_num, tenant_name, invoice_type, total_amount, details }]);
+      .insert([{ invoice_number, room_num, tenant_name, invoice_type, total_amount, details }]);
 
     if (error) {
       return res.status(500).json({ error: error.message });
