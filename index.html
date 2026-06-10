@@ -24,6 +24,7 @@
       <div class="mode-tabs">
         <button class="tab-btn active" id="tab-utility" onclick="switchMode('utility')">Monthly Utility</button>
         <button class="tab-btn" id="tab-moveout" onclick="switchMode('moveout')">Move-Out Billing</button>
+        <button class="tab-btn" id="tab-history" onclick="switchMode('history')">☁️ Cloud History</button>
       </div>
     </header>
 
@@ -121,7 +122,10 @@
             </div>
           </div>
 
-          <button class="action-btn primary-btn" onclick="printReceipt()">Print/Save Receipt</button>
+          <div class="btn-group">
+            <button class="action-btn primary-btn" onclick="printReceipt()">Print/Save Receipt</button>
+            <button class="action-btn secondary-btn" onclick="saveInvoiceToCloud()">☁️ Save to Cloud</button>
+          </div>
         </div>
 
         <!-- MOVE-OUT FORM -->
@@ -168,7 +172,37 @@
             </div>
           </div>
 
-          <button class="action-btn primary-btn" onclick="printReceipt()">Print/Save Move-Out Bill</button>
+          <div class="btn-group">
+            <button class="action-btn primary-btn" onclick="printReceipt()">Print/Save Move-Out Bill</button>
+            <button class="action-btn secondary-btn" onclick="saveInvoiceToCloud()">☁️ Save to Cloud</button>
+          </div>
+        </div>
+
+        <!-- HISTORY PANEL -->
+        <div id="form-history" class="hidden">
+          <h2 class="section-title">Cloud Invoice History</h2>
+          <div class="form-group">
+            <input type="text" id="search-history" placeholder="Search by Room or Tenant Name..." oninput="filterHistory()">
+          </div>
+          <div class="history-list-container">
+            <table class="receipt-table" id="history-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Room</th>
+                  <th>Tenant</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="history-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+            <div id="history-loading" class="hidden text-center" style="padding: 20px;">Loading history...</div>
+            <div id="history-error" class="hidden text-danger text-center" style="padding: 20px;"></div>
+          </div>
         </div>
       </section>
 
@@ -335,6 +369,21 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <div id="pin-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2 class="section-title">Admin Access Required</h2>
+      <p style="margin-bottom: 20px;">Please enter the PIN to connect to the cloud database.</p>
+      <div class="form-group">
+        <input type="password" id="pin-input" placeholder="Enter PIN" style="text-align: center; letter-spacing: 5px; font-size: 1.5rem;" autocomplete="off">
+      </div>
+      <p id="pin-error" class="text-danger hidden" style="margin-top: -10px; margin-bottom: 15px; font-size: 0.9rem;">Invalid PIN</p>
+      <div class="btn-group">
+        <button class="action-btn secondary-btn" onclick="closePinModal()">Cancel</button>
+        <button class="action-btn primary-btn" onclick="submitPin()">Unlock</button>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>

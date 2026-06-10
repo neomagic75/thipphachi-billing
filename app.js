@@ -31,20 +31,29 @@ function switchMode(mode) {
   // Toggle tab buttons
   document.getElementById('tab-utility').classList.toggle('active', mode === 'utility');
   document.getElementById('tab-moveout').classList.toggle('active', mode === 'moveout');
+  document.getElementById('tab-history').classList.toggle('active', mode === 'history');
   
   // Toggle form panels
   document.getElementById('form-utility').classList.toggle('hidden', mode !== 'utility');
   document.getElementById('form-moveout').classList.toggle('hidden', mode !== 'moveout');
+  document.getElementById('form-history').classList.toggle('hidden', mode !== 'history');
   
-  // Toggle receipt preview tables
-  document.getElementById('preview-utility-table').classList.toggle('hidden', mode !== 'utility');
-  document.getElementById('preview-moveout-table').classList.toggle('hidden', mode !== 'moveout');
-  
-  // Update receipt title
-  const titleText = mode === 'utility' ? 'ใบแจ้งหนี้ค่าเช่าและสาธารณูปโภค' : 'ใบสรุปการย้ายออกและคืนเงินประกัน';
-  document.getElementById('preview-title').textContent = titleText;
-  
-  syncPreview();
+  // Toggle receipt preview tables (History hides the receipt preview or shows a placeholder)
+  const receiptOuter = document.querySelector('.receipt-container-outer');
+  if (mode === 'history') {
+    receiptOuter.classList.add('hidden');
+    loadCloudHistory();
+  } else {
+    receiptOuter.classList.remove('hidden');
+    document.getElementById('preview-utility-table').classList.toggle('hidden', mode !== 'utility');
+    document.getElementById('preview-moveout-table').classList.toggle('hidden', mode !== 'moveout');
+    
+    // Update receipt title
+    const titleText = mode === 'utility' ? 'ใบแจ้งหนี้ค่าเช่าและสาธารณูปโภค' : 'ใบสรุปการย้ายออกและคืนเงินประกัน';
+    document.getElementById('preview-title').textContent = titleText;
+    
+    syncPreview();
+  }
 }
 
 // ================= PHOTO HANDLING =================
@@ -410,4 +419,193 @@ function printReceipt() {
   }
   
   window.print();
+}
+
+// ================= CLOUD SYNC & AUTH =================
+let pendingCloudAction = null;
+let allInvoices = [];
+
+function openPinModal(action) {
+  pendingCloudAction = action;
+  document.getElementById('pin-modal').classList.remove('hidden');
+  document.getElementById('pin-input').value = '';
+  document.getElementById('pin-error').classList.add('hidden');
+  document.getElementById('pin-input').focus();
+}
+
+function closePinModal() {
+  document.getElementById('pin-modal').classList.add('hidden');
+  pendingCloudAction = null;
+  
+  if (appMode === 'history') {
+    switchMode('utility'); // Revert if cancelled history load
+  }
+}
+
+async function submitPin() {
+  const pin = document.getElementById('pin-input').value;
+  if (!pin) return;
+  
+  try {
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin })
+    });
+    
+    if (res.ok) {
+      document.getElementById('pin-modal').classList.add('hidden');
+      if (pendingCloudAction) pendingCloudAction();
+      pendingCloudAction = null;
+    } else {
+      document.getElementById('pin-error').classList.remove('hidden');
+    }
+  } catch (err) {
+    console.error('Auth error', err);
+    document.getElementById('pin-error').classList.remove('hidden');
+  }
+}
+
+async function saveInvoiceToCloud() {
+  try {
+    const payload = constructPayload();
+    const res = await fetch('/api/invoices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.status === 401) {
+      openPinModal(saveInvoiceToCloud);
+      return;
+    }
+    
+    if (res.ok) {
+      alert('Invoice successfully saved to the cloud!');
+      if (appMode === 'utility') saveCurrentReadings();
+    } else {
+      const err = await res.json();
+      alert('Error saving to cloud: ' + (err.error || 'Unknown error'));
+    }
+  } catch (error) {
+    console.error('Error saving invoice:', error);
+    alert('Failed to connect to the cloud.');
+  }
+}
+
+function constructPayload() {
+  if (appMode === 'utility') {
+    const baseRent = parseFloat(document.getElementById('base-rent').value) || 0;
+    const wifiFee = parseFloat(document.getElementById('wifi-fee').value) || 0;
+    const otherFee = parseFloat(document.getElementById('other-fee').value) || 0;
+    const elecUnits = Math.max(0, (parseFloat(document.getElementById('elec-curr').value)||0) - (parseFloat(document.getElementById('elec-prev').value)||0));
+    const elecCost = elecUnits * (parseFloat(document.getElementById('elec-rate').value)||7);
+    const waterUnits = Math.max(0, (parseFloat(document.getElementById('water-curr').value)||0) - (parseFloat(document.getElementById('water-prev').value)||0));
+    const waterCost = waterUnits * (parseFloat(document.getElementById('water-rate').value)||18);
+
+    return {
+      invoice_type: 'utility',
+      room_num: document.getElementById('room-num').value || '-',
+      tenant_name: document.getElementById('tenant-name').value || '-',
+      total_amount: baseRent + wifiFee + otherFee + elecCost + waterCost,
+      details: {
+        baseRent, wifiFee, otherFee,
+        elec: {
+          prev: parseFloat(document.getElementById('elec-prev').value)||0,
+          curr: parseFloat(document.getElementById('elec-curr').value)||0,
+          rate: parseFloat(document.getElementById('elec-rate').value)||7,
+          cost: elecCost
+        },
+        water: {
+          prev: parseFloat(document.getElementById('water-prev').value)||0,
+          curr: parseFloat(document.getElementById('water-curr').value)||0,
+          rate: parseFloat(document.getElementById('water-rate').value)||18,
+          cost: waterCost
+        }
+      }
+    };
+  } else {
+    // Moveout
+    const deposit = parseFloat(document.getElementById('mo-deposit').value) || 0;
+    const unpaidRent = parseFloat(document.getElementById('mo-unpaid-rent').value) || 0;
+    const unpaidUtils = parseFloat(document.getElementById('mo-unpaid-utils').value) || 0;
+    const damagesCost = damageItems.reduce((sum, item) => sum + (item.cost || 0), 0);
+    const netDue = (damagesCost + unpaidRent + unpaidUtils) - deposit;
+
+    return {
+      invoice_type: 'moveout',
+      room_num: document.getElementById('mo-room-num').value || '-',
+      tenant_name: document.getElementById('mo-tenant-name').value || '-',
+      total_amount: netDue,
+      details: {
+        deposit, unpaidRent, unpaidUtils, damagesCost, netDue,
+        damageItems: damageItems.map(d => ({ description: d.description, cost: d.cost })) // Omitting base64 photos for DB size
+      }
+    };
+  }
+}
+
+async function loadCloudHistory() {
+  document.getElementById('history-loading').classList.remove('hidden');
+  document.getElementById('history-error').classList.add('hidden');
+  document.getElementById('history-tbody').innerHTML = '';
+
+  try {
+    const res = await fetch('/api/invoices');
+    if (res.status === 401) {
+      document.getElementById('history-loading').classList.add('hidden');
+      openPinModal(loadCloudHistory);
+      return;
+    }
+    
+    if (res.ok) {
+      const data = await res.json();
+      allInvoices = data.invoices || [];
+      renderHistoryList(allInvoices);
+    } else {
+      throw new Error('Failed to fetch history');
+    }
+  } catch (error) {
+    document.getElementById('history-error').textContent = 'Error loading history from cloud.';
+    document.getElementById('history-error').classList.remove('hidden');
+  } finally {
+    document.getElementById('history-loading').classList.add('hidden');
+  }
+}
+
+function renderHistoryList(invoices) {
+  const tbody = document.getElementById('history-tbody');
+  tbody.innerHTML = '';
+  
+  if (invoices.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No invoices found</td></tr>';
+    return;
+  }
+
+  invoices.forEach(inv => {
+    const date = new Date(inv.created_at).toLocaleDateString('th-TH');
+    const isRefund = inv.invoice_type === 'moveout' && inv.total_amount < 0;
+    const amountText = isRefund ? formatBaht(Math.abs(inv.total_amount)) + ' (Refund)' : formatBaht(inv.total_amount);
+    const amountClass = isRefund ? 'text-success' : 'text-danger';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${date}</td>
+      <td><strong>${inv.room_num}</strong></td>
+      <td>${inv.tenant_name || '-'}</td>
+      <td><span class="badge ${inv.invoice_type === 'utility' ? 'badge-blue' : 'badge-orange'}">${inv.invoice_type.toUpperCase()}</span></td>
+      <td class="${amountClass}"><strong>${amountText}</strong></td>
+      <td><button class="action-btn secondary-btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="alert('Viewing full details is not yet implemented.')">View</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function filterHistory() {
+  const term = document.getElementById('search-history').value.toLowerCase();
+  const filtered = allInvoices.filter(inv => 
+    (inv.room_num && inv.room_num.toLowerCase().includes(term)) ||
+    (inv.tenant_name && inv.tenant_name.toLowerCase().includes(term))
+  );
+  renderHistoryList(filtered);
 }
