@@ -1,5 +1,5 @@
 // ================= STATE MANAGEMENT =================
-let appMode = 'utility'; // 'utility' or 'moveout'
+let appMode = 'dashboard'; // 'dashboard', 'utility', 'moveout', 'history'
 let damageItems = [];
 let photoStore = {
   elec: null,
@@ -53,11 +53,17 @@ function switchMode(mode) {
   appMode = mode;
   
   // Toggle tab buttons
+  const tabDashboard = document.getElementById('tab-dashboard');
+  if(tabDashboard) tabDashboard.classList.toggle('active', mode === 'dashboard');
+  
   document.getElementById('tab-utility').classList.toggle('active', mode === 'utility');
   document.getElementById('tab-moveout').classList.toggle('active', mode === 'moveout');
   document.getElementById('tab-history').classList.toggle('active', mode === 'history');
   
   // Toggle form panels
+  const formDashboard = document.getElementById('form-dashboard');
+  if(formDashboard) formDashboard.classList.toggle('hidden', mode !== 'dashboard');
+  
   document.getElementById('form-utility').classList.toggle('hidden', mode !== 'utility');
   document.getElementById('form-moveout').classList.toggle('hidden', mode !== 'moveout');
   document.getElementById('form-history').classList.toggle('hidden', mode !== 'history');
@@ -67,6 +73,9 @@ function switchMode(mode) {
   if (mode === 'history') {
     receiptOuter.classList.add('hidden');
     loadCloudHistory();
+  } else if (mode === 'dashboard') {
+    receiptOuter.classList.add('hidden');
+    loadDashboardData();
   } else {
     receiptOuter.classList.remove('hidden');
     document.getElementById('preview-utility-table').classList.toggle('hidden', mode !== 'utility');
@@ -85,8 +94,11 @@ function handlePhoto(input, type) {
   const file = input.files[0];
   if (!file) return;
 
+  const currInput = document.getElementById(`${type}-curr`);
+  if (currInput) currInput.placeholder = "Reading image...";
+
   const reader = new FileReader();
-  reader.onload = function (e) {
+  reader.onload = async function (e) {
     const base64Data = e.target.result;
     
     // Store in state
@@ -103,6 +115,32 @@ function handlePhoto(input, type) {
     const printBox = document.getElementById(`print-photo-${type}`);
     printImg.src = base64Data;
     printBox.classList.remove('hidden');
+
+    // Call OCR for Meter Readings
+    if (appMode === 'utility' && (type === 'elec' || type === 'water')) {
+      try {
+        const res = await fetch('/api/read-meter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: base64Data, meterType: type })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.reading !== undefined && data.reading !== null) {
+            currInput.value = data.reading;
+            syncPreview();
+          } else {
+            alert(`Could not detect a clear reading for ${type} meter.`);
+          }
+        } else {
+          console.error("OCR API failed", await res.text());
+        }
+      } catch (err) {
+        console.error("OCR fetch error:", err);
+      } finally {
+        if (currInput) currInput.placeholder = "Current Reading";
+      }
+    }
   };
   reader.readAsDataURL(file);
 }
@@ -487,8 +525,8 @@ function closePinModal() {
   document.getElementById('pin-modal').classList.add('hidden');
   pendingCloudAction = null;
   
-  if (appMode === 'history') {
-    switchMode('utility'); // Revert if cancelled history load
+  if (appMode === 'history' || appMode === 'dashboard') {
+    switchMode('utility'); // Revert if cancelled
   }
 }
 
@@ -533,7 +571,10 @@ async function saveInvoiceToCloud() {
     if (res.ok) {
       alert('Invoice successfully saved to the cloud!');
       incrementInvoiceCounter();
-      if (appMode === 'utility') syncCloudUnitData();
+      if (appMode === 'utility') {
+        syncCloudUnitData();
+        advanceToNextRoom();
+      }
     } else {
       const err = await res.json();
       alert('Error saving to cloud: ' + (err.error || 'Unknown error'));
@@ -663,4 +704,149 @@ function filterHistory() {
     (inv.invoice_number && inv.invoice_number.toLowerCase().includes(term))
   );
   renderHistoryList(filtered);
+}
+
+// ================= DASHBOARD =================
+let dashboardUnits = [];
+let dashboardInvoices = [];
+
+async function loadDashboardData() {
+  document.getElementById('dashboard-loading').classList.remove('hidden');
+  document.getElementById('dashboard-error').classList.add('hidden');
+  document.getElementById('dashboard-grid').innerHTML = '';
+
+  try {
+    const [unitsRes, invRes] = await Promise.all([
+      fetch('/api/units'),
+      fetch('/api/invoices')
+    ]);
+
+    if (unitsRes.status === 401 || invRes.status === 401) {
+      document.getElementById('dashboard-loading').classList.add('hidden');
+      openPinModal(loadDashboardData);
+      return;
+    }
+
+    if (!unitsRes.ok || !invRes.ok) throw new Error('Failed to fetch dashboard data');
+
+    const unitsData = await unitsRes.json();
+    const invData = await invRes.json();
+
+    dashboardUnits = unitsData.units || [];
+    dashboardInvoices = invData.invoices || [];
+
+    renderDashboardGrid();
+  } catch (error) {
+    document.getElementById('dashboard-error').textContent = 'Error loading dashboard.';
+    document.getElementById('dashboard-error').classList.remove('hidden');
+  } finally {
+    document.getElementById('dashboard-loading').classList.add('hidden');
+  }
+}
+
+function renderDashboardGrid() {
+  const grid = document.getElementById('dashboard-grid');
+  grid.innerHTML = '';
+  
+  const d = new Date();
+  const currentMonthStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+
+  const thisMonthInvoices = dashboardInvoices.filter(inv => inv.created_at && inv.created_at.startsWith(currentMonthStr));
+
+  const roomSelect = document.getElementById('room-num');
+  const allRooms = Array.from(roomSelect.options).map(opt => opt.value).filter(val => val);
+
+  allRooms.forEach(room => {
+    const isDone = thisMonthInvoices.some(inv => inv.room_num === room && inv.invoice_type === 'utility');
+    
+    const card = document.createElement('div');
+    card.className = `dashboard-room-card ${isDone ? 'done' : 'pending'}`;
+    card.innerHTML = `
+      <h3>${room}</h3>
+      <span class="status-icon">${isDone ? '✅' : '⏳'}</span>
+    `;
+    
+    if (!isDone) {
+      card.onclick = () => {
+        switchMode('utility');
+        document.getElementById('room-num').value = room;
+        loadCloudUnitData(room);
+        syncPreview();
+      };
+    }
+    
+    grid.appendChild(card);
+  });
+}
+
+// ================= WALK MODE =================
+function advanceToNextRoom() {
+  const checkbox = document.getElementById('walk-mode-checkbox');
+  if (!checkbox || !checkbox.checked) return;
+
+  const roomSelect = document.getElementById('room-num');
+  const currentIndex = roomSelect.selectedIndex;
+  
+  if (currentIndex > 0 && currentIndex < roomSelect.options.length - 1) {
+    roomSelect.selectedIndex = currentIndex + 1;
+    const newRoom = roomSelect.value;
+    
+    document.getElementById('invoice-num').value = generateInvoiceNumber();
+    document.getElementById('elec-curr').value = 0;
+    document.getElementById('water-curr').value = 0;
+    removePhoto('elec');
+    removePhoto('water');
+    
+    loadCloudUnitData(newRoom);
+    alert(`Auto-advanced to Room ${newRoom}`);
+  } else {
+    alert("Reached the end of the room list.");
+  }
+}
+
+// ================= LINE INTEGRATION =================
+async function shareToLine() {
+  const receiptEl = document.getElementById('printable-receipt');
+  
+  try {
+    const canvas = await html2canvas(receiptEl, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff'
+    });
+
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        alert("Failed to generate image.");
+        return;
+      }
+      const file = new File([blob], `invoice-${document.getElementById('invoice-num').value}.png`, { type: 'image/png' });
+      
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: 'Utility Invoice',
+            text: 'Here is your monthly invoice.',
+            files: [file]
+          });
+        } catch (shareErr) {
+          console.error("Share failed", shareErr);
+        }
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        alert("Image downloaded. You can now share it via LINE.");
+      }
+    }, 'image/png');
+
+  } catch (err) {
+    console.error("Error creating receipt image", err);
+    alert("Could not create image for sharing.");
+  }
 }

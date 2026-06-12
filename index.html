@@ -22,7 +22,8 @@
       </div>
       <!-- Mode Switcher -->
       <div class="mode-tabs">
-        <button class="tab-btn active" id="tab-utility" onclick="switchMode('utility')">Monthly Utility</button>
+        <button class="tab-btn active" id="tab-dashboard" onclick="switchMode('dashboard')">📊 Dashboard</button>
+        <button class="tab-btn" id="tab-utility" onclick="switchMode('utility')">Monthly Utility</button>
         <button class="tab-btn" id="tab-moveout" onclick="switchMode('moveout')">Move-Out Billing</button>
         <button class="tab-btn" id="tab-history" onclick="switchMode('history')">☁️ Cloud History</button>
       </div>
@@ -32,9 +33,33 @@
       <!-- ================= LEFT PANEL: INPUT FORM ================= -->
       <section class="form-panel no-print">
         
+        <!-- DASHBOARD FORM -->
+        <div id="form-dashboard" class="active-form">
+          <h2 class="section-title">Monthly Dashboard</h2>
+          <p style="margin-bottom: 1rem; color: var(--text-muted);">Select a room below to begin meter reading. Green rooms are completed for this month.</p>
+          <div class="dashboard-controls" style="margin-bottom: 1rem;">
+            <button class="action-btn secondary-btn" onclick="loadDashboardData()" style="width: auto; padding: 0.5rem 1rem;">🔄 Refresh Status</button>
+          </div>
+          <div id="dashboard-loading" class="hidden text-center" style="padding: 20px;">Loading unit status...</div>
+          <div id="dashboard-error" class="hidden text-danger text-center" style="padding: 20px;"></div>
+          <div id="dashboard-grid" class="dashboard-grid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
         <!-- UTILITY FORM -->
-        <div id="form-utility" class="active-form">
-          <h2 class="section-title">Monthly Utility Entry</h2>
+        <div id="form-utility" class="hidden">
+          <div class="card-header" style="margin-bottom: 0;">
+            <h2 class="section-title" style="margin-bottom: 0;">Monthly Utility Entry</h2>
+            <div class="walk-mode-toggle">
+              <label class="switch-label">
+                <input type="checkbox" id="walk-mode-checkbox">
+                <span class="slider round"></span>
+                Walk Mode (Auto-Next Room)
+              </label>
+            </div>
+          </div>
+          <br>
           
           <div class="grid-3">
             <div class="form-group">
@@ -101,12 +126,12 @@
               <div class="summary-pill">Usage: <strong id="elec-usage-inline">0</strong> Units</div>
               <div class="summary-pill highlight-pill">Cost: <strong id="elec-cost-inline">0.00</strong> ฿</div>
             </div>
-            <div class="form-group photo-upload">
+            <div class="form-group photo-upload split-photo-layout">
               <label class="photo-btn">
                 📸 Take/Upload Electricity Meter Photo
                 <input type="file" id="elec-photo" accept="image/*" capture="environment" onchange="handlePhoto(this, 'elec')">
               </label>
-              <div id="elec-preview-container" class="thumbnail-preview hidden">
+              <div id="elec-preview-container" class="thumbnail-preview large-preview hidden">
                 <img id="elec-thumb" src="" alt="Meter preview">
                 <button type="button" class="remove-photo" onclick="removePhoto('elec')">×</button>
               </div>
@@ -133,12 +158,12 @@
               <div class="summary-pill">Usage: <strong id="water-usage-inline">0</strong> Units</div>
               <div class="summary-pill highlight-pill">Cost: <strong id="water-cost-inline">0.00</strong> ฿</div>
             </div>
-            <div class="form-group photo-upload">
+            <div class="form-group photo-upload split-photo-layout">
               <label class="photo-btn">
                 📸 Take/Upload Water Meter Photo
                 <input type="file" id="water-photo" accept="image/*" capture="environment" onchange="handlePhoto(this, 'water')">
               </label>
-              <div id="water-preview-container" class="thumbnail-preview hidden">
+              <div id="water-preview-container" class="thumbnail-preview large-preview hidden">
                 <img id="water-thumb" src="" alt="Meter preview">
                 <button type="button" class="remove-photo" onclick="removePhoto('water')">×</button>
               </div>
@@ -147,7 +172,10 @@
 
           <div class="btn-group">
             <button class="action-btn primary-btn" onclick="printReceipt()">Print/Save Receipt</button>
-            <button class="action-btn secondary-btn" onclick="saveInvoiceToCloud()">☁️ Save to Cloud</button>
+            <div class="grid-2" style="margin-bottom: 0;">
+              <button class="action-btn secondary-btn" onclick="saveInvoiceToCloud()" style="margin-bottom: 0;">☁️ Save to Cloud</button>
+              <button class="action-btn secondary-btn line-btn" onclick="shareToLine()" style="margin-bottom: 0; background-color: #06C755; color: white; border-color: #06C755;">💬 Share to LINE</button>
+            </div>
           </div>
         </div>
 
@@ -425,6 +453,7 @@
     </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

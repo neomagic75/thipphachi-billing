@@ -924,3 +924,109 @@ select:focus {
 .badge-blue { background: #1e3a8a; color: #93c5fd; }
 .badge-orange { background: #7c2d12; color: #fdba74; }
 
+/* ================= DASHBOARD & NEW FEATURES ================= */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 1rem;
+}
+
+.dashboard-room-card {
+  background-color: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  transition: all 0.2s ease;
+}
+
+.dashboard-room-card.done {
+  border-color: var(--success);
+  background-color: rgba(16, 185, 129, 0.05);
+}
+
+.dashboard-room-card.pending {
+  border-color: var(--danger);
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+.dashboard-room-card:hover.pending {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.15);
+}
+
+.dashboard-room-card h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Walk Mode Toggle */
+.walk-mode-toggle {
+  display: flex;
+  align-items: center;
+}
+
+.switch-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.switch-label input {
+  display: none;
+}
+
+.slider {
+  width: 40px;
+  height: 20px;
+  background-color: #ccc;
+  border-radius: 20px;
+  position: relative;
+  transition: 0.3s;
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: white;
+  top: 2px;
+  left: 2px;
+  transition: 0.3s;
+}
+
+.switch-label input:checked + .slider {
+  background-color: var(--primary);
+}
+
+.switch-label input:checked + .slider::before {
+  transform: translateX(20px);
+}
+
+/* Split Photo Layout */
+@media (min-width: 768px) {
+  .split-photo-layout {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  .split-photo-layout .photo-btn {
+    flex: 1;
+  }
+  .split-photo-layout .thumbnail-preview {
+    margin-top: 0;
+  }
+}
+
+.large-preview {
+  max-width: 250px !important;
+  border: 2px solid var(--primary);
+}
