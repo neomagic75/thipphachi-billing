@@ -2,6 +2,7 @@
 let appMode = 'dashboard'; // 'dashboard', 'utility', 'moveout', 'history'
 let damageItems = [];
 let photoStore = {
+  room: null,
   elec: null,
   water: null
 };
@@ -115,6 +116,7 @@ function handlePhoto(input, type) {
     const printBox = document.getElementById(`print-photo-${type}`);
     printImg.src = base64Data;
     printBox.classList.remove('hidden');
+    syncPreview();
 
     // Call OCR for Meter Readings
     if (appMode === 'utility' && (type === 'elec' || type === 'water')) {
@@ -128,10 +130,17 @@ function handlePhoto(input, type) {
           const data = await res.json();
           if (data.reading !== undefined && data.reading !== null) {
             currInput.value = data.reading;
-            syncPreview();
           } else {
             alert(`Could not detect a clear reading for ${type} meter.`);
           }
+
+          const serialInput = document.getElementById(`${type}-serial`);
+          const detectedSerial = Array.isArray(data.serialNumbers) ? data.serialNumbers[0] : data.serialNumber;
+          if (serialInput && !serialInput.value && detectedSerial) {
+            serialInput.value = detectedSerial;
+          }
+
+          syncPreview();
         } else {
           console.error("OCR API failed", await res.text());
         }
@@ -160,6 +169,15 @@ function removePhoto(type) {
   const printBox = document.getElementById(`print-photo-${type}`);
   printBox.classList.add('hidden');
   document.getElementById(`print-img-${type}`).src = '';
+  syncPreview();
+}
+
+function clearUnitEvidence() {
+  removePhoto('room');
+  removePhoto('elec');
+  removePhoto('water');
+  document.getElementById('elec-serial').value = '';
+  document.getElementById('water-serial').value = '';
 }
 
 // ================= DYNAMIC DAMAGE ITEMS =================
@@ -288,21 +306,24 @@ function syncUtilityPreview() {
   const elecUnits = Math.max(0, elecCurr - elecPrev);
   const elecCost = elecUnits * elecRate;
   
-  const waterUsage = Math.max(0, waterCurr - waterPrev);
-  const waterCost = waterUsage * waterRate;
+  const waterUnits = Math.max(0, waterCurr - waterPrev);
+  const waterCost = waterUnits * waterRate;
 
   const grandTotal = baseRent + wifiFee + otherFee + elecCost + waterCost;
 
   // Render inline card summaries
   document.getElementById('elec-usage-inline').textContent = elecUnits;
   document.getElementById('elec-cost-inline').textContent = elecCost.toLocaleString('en-US', {minimumFractionDigits: 2});
-  document.getElementById('water-usage-inline').textContent = waterUsage;
+  document.getElementById('water-usage-inline').textContent = waterUnits;
   document.getElementById('water-cost-inline').textContent = waterCost.toLocaleString('en-US', {minimumFractionDigits: 2});
 
   // Render text values
   document.getElementById('prev-invoice-val').textContent = invoiceNum;
   document.getElementById('prev-room-val').textContent = room;
   document.getElementById('prev-tenant-val').textContent = tenant;
+  document.getElementById('print-room-meta').textContent = `Room: ${room} | Tenant: ${tenant}`;
+  document.getElementById('print-elec-meta').textContent = `Room: ${room} | Serial: ${document.getElementById('elec-serial').value || '-'}`;
+  document.getElementById('print-water-meta').textContent = `Room: ${room} | Serial: ${document.getElementById('water-serial').value || '-'}`;
   
   document.getElementById('prev-rent-cost').textContent = formatBaht(baseRent);
   document.getElementById('prev-wifi-cost').textContent = formatBaht(wifiFee);
@@ -442,6 +463,20 @@ function formatBaht(value) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
+}
+
+function getMeterMatchDetails() {
+  return {
+    roomNumber: document.getElementById('room-num').value || '-',
+    tenantName: document.getElementById('tenant-name').value || '-',
+    elecSerial: document.getElementById('elec-serial').value.trim(),
+    waterSerial: document.getElementById('water-serial').value.trim(),
+    photos: {
+      room: photoStore.room,
+      elec: photoStore.elec,
+      water: photoStore.water
+    }
+  };
 }
 
 // ================= CLOUD UNIT PERSISTENCE =================
@@ -603,6 +638,7 @@ function constructPayload() {
       total_amount: baseRent + wifiFee + otherFee + elecCost + waterCost,
       details: {
         baseRent, wifiFee, otherFee,
+        meterMatch: getMeterMatchDetails(),
         elec: {
           prev: parseFloat(document.getElementById('elec-prev').value)||0,
           curr: parseFloat(document.getElementById('elec-curr').value)||0,
@@ -794,8 +830,7 @@ function advanceToNextRoom() {
     document.getElementById('invoice-num').value = generateInvoiceNumber();
     document.getElementById('elec-curr').value = 0;
     document.getElementById('water-curr').value = 0;
-    removePhoto('elec');
-    removePhoto('water');
+    clearUnitEvidence();
     
     loadCloudUnitData(newRoom);
     alert(`Auto-advanced to Room ${newRoom}`);

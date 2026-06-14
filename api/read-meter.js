@@ -31,6 +31,7 @@ Your task is to extract the CURRENT METER READING as a simple integer number.
 Return ONLY a valid JSON object in this exact format (no markdown code blocks):
 {
   "reading": 12345,
+  "serialNumbers": ["optional visible serial number"],
   "rawText": "Any other text you see",
   "confidence": "high|medium|low"
 }`;

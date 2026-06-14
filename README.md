@@ -19,6 +19,7 @@ A lightweight, premium, mobile-first web application for managing monthly utilit
 
 ### 3. Media & Evidence Attachments
 *   Capture or upload camera photos of physical meters or damaged fixtures directly.
+*   Capture room-number evidence and bind room, tenant, meter photos, and visible meter serial numbers into each utility invoice payload.
 *   Evidence images are scaled and formatted to print neatly as appendices at the bottom of the bill.
 
 ### 4. Cloud History & Vercel Integration (NEW)

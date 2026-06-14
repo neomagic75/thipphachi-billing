@@ -68,7 +68,7 @@
             </div>
             <div class="form-group">
               <label for="room-num">Room Number / เลขห้อง</label>
-              <select id="room-num" required onchange="loadCloudUnitData(this.value); syncPreview();">
+              <select id="room-num" required onchange="clearUnitEvidence(); loadCloudUnitData(this.value); syncPreview();">
                 <option value="" disabled selected>Select Room</option>
                 <option value="101">101</option><option value="102">102</option><option value="103">103</option><option value="104">104</option><option value="105">105</option>
                 <option value="201">201</option><option value="202">202</option><option value="203">203</option><option value="204">204</option><option value="205">205</option>
@@ -85,6 +85,31 @@
               <label for="tenant-name">Tenant Name / ชื่อผู้เช่า</label>
               <input type="text" id="tenant-name" placeholder="Tenant Name" oninput="syncPreview()">
             </div>
+          </div>
+
+          <div class="form-section-card">
+            <h3>Room & Meter Match</h3>
+            <div class="grid-3">
+              <div class="form-group photo-upload">
+                <label class="photo-btn">
+                  📸 Take/Upload Room Number Photo
+                  <input type="file" id="room-photo" accept="image/*" capture="environment" onchange="handlePhoto(this, 'room')">
+                </label>
+                <div id="room-preview-container" class="thumbnail-preview hidden">
+                  <img id="room-thumb" src="" alt="Room number preview">
+                  <button type="button" class="remove-photo" onclick="removePhoto('room')">×</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="elec-serial">Electric Meter Serial / เลขมิเตอร์ไฟฟ้า</label>
+                <input type="text" id="elec-serial" placeholder="Optional serial number" oninput="syncPreview()">
+              </div>
+              <div class="form-group">
+                <label for="water-serial">Water Meter Serial / เลขมิเตอร์น้ำ</label>
+                <input type="text" id="water-serial" placeholder="Optional serial number" oninput="syncPreview()">
+              </div>
+            </div>
+            <p class="form-hint">Saved with the invoice to bind room, tenant, meter photos, and serial numbers.</p>
           </div>
 
           <!-- Base Rent & Fees -->
@@ -419,12 +444,19 @@
 
             <!-- Embedded Meter Photos (Hidden in screen view, printed neatly at the bottom) -->
             <div class="printed-photos-section">
+              <div id="print-photo-room" class="print-photo-box hidden">
+                <p class="photo-title">หลักฐานเลขห้อง (Room Number Photo)</p>
+                <p class="photo-meta" id="print-room-meta">Room: - | Tenant: -</p>
+                <img id="print-img-room" src="" alt="Room Number">
+              </div>
               <div id="print-photo-elec" class="print-photo-box hidden">
                 <p class="photo-title">หลักฐานมิเตอร์ไฟฟ้า (Elec Meter Photo)</p>
+                <p class="photo-meta" id="print-elec-meta">Room: - | Serial: -</p>
                 <img id="print-img-elec" src="" alt="Elec Meter">
               </div>
               <div id="print-photo-water" class="print-photo-box hidden">
                 <p class="photo-title">หลักฐานมิเตอร์น้ำ (Water Meter Photo)</p>
+                <p class="photo-meta" id="print-water-meta">Room: - | Serial: -</p>
                 <img id="print-img-water" src="" alt="Water Meter">
               </div>
               <div id="print-damage-gallery" class="print-damage-gallery hidden">

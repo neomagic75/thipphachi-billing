@@ -270,6 +270,13 @@ select {
   color: var(--text-muted);
 }
 
+.form-hint {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  margin-top: -0.25rem;
+}
+
 .form-panel input:focus, .form-panel select:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
@@ -824,6 +831,12 @@ select:focus {
     color: #0f172a;
     border-bottom: 1px solid #e2e8f0;
     padding-bottom: 1mm;
+  }
+
+  .photo-meta {
+    color: #475569;
+    font-size: 0.68rem;
+    margin-bottom: 2mm;
   }
 
   .print-photo-box img {
